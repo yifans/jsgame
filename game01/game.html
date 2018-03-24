@@ -25,16 +25,26 @@
         var o = {
             image: image,
             x: 100,
-            y: 200,
+            y: 250,
             speed: 5,
         }
         var paddle = o
+        o.move = function (x) {
+            if (x < 0 ) {
+                x = 0
+            }
+
+            if (x > 400 - o.image.width) {
+                x = 400 - o.image.width
+            }
+            o.x = x
+        }
         o.moveLeft = function () {
-            paddle.x -= paddle.speed
+            o.move(paddle.x - paddle.speed)
         }
 
         o.moveRight = function () {
-            paddle.x += paddle.speed
+            o.move(paddle.x + paddle.speed)
         }
 
         o.collide = function (ball) {
@@ -56,8 +66,8 @@
             image: image,
             x: 100,
             y: 200,
-            speedX: 10,
-            speedY: 10,
+            speedX: 5,
+            speedY: 5,
             fired: false,
         }
 
@@ -77,10 +87,45 @@
                 o.y += o.speedY
              }
         }
+
+        o.rebound = function () {
+            o.speedY *= -1
+        }
         return o
     }
 
-    var GuaGame = function () {
+    var rectIntersects = function (a, b) {
+        var o = a
+        if (b.y > o.y && b.y < o.y + o.image.height) {
+            if (b.x > o.x && b.x < o.x + o.image.width) {
+                return true
+            }
+        }
+        return false
+    }
+    var Block = function () {
+        var image = imageFromPath('block.png')
+        var o = {
+            image: image,
+            x: 100,
+            y: 100,
+            w: 50,
+            h: 20,
+            alive: true,
+        }
+
+        o.kill = function () {
+            o.alive = false
+        }
+
+        o.collide = function (b) {
+            return o.alive && (rectIntersects(o, b) || rectIntersects(b, o))
+        }
+        return o
+    }
+
+
+    var GuaGame = function (fps) {
         var g = {
             actions: {},
             keydowns: {},
@@ -121,15 +166,25 @@
             context.clearRect(0, 0, canvas.width, canvas.height)
             // draw
             g.draw()
-        }, 1000/30)
+        }, 1000/fps)
 
         return g
     }
     var __main = function () {
-        var game = GuaGame()
+        var game = GuaGame(30)
 
         var paddle = Paddle()
         var ball = Ball()
+
+        var blocks = []
+        for (var i =0; i < 3; i++) {
+            var b = new Block()
+            b.x = i * 150;
+            b.y = 50
+            blocks.push(b)
+        }
+
+        var paused = false
 
         game.registerAction('a', function () {
             paddle.moveLeft()
@@ -142,17 +197,38 @@
         game.registerAction('f', function () {
             ball.fire()
         })
+
+        window.addEventListener('keydown', function (event) {
+            if (event.key = 'p')
+                paused = !paused
+        })
         
         game.update = function () {
+            if (paused) {
+                return
+            }
             ball.move()
             if (paddle.collide(ball)) {
-                ball.speedY *= -1
+                ball.rebound()
+            }
+            for (var i = 0;i < blocks.length; i++) {
+                var block = blocks[i]
+                if (block.collide(ball)) {
+                    block.kill()
+                    ball.rebound()
+                }
             }
         }
 
         game.draw = function () {
             game.drawImage(paddle)
             game.drawImage(ball)
+            for (var i = 0; i < blocks.length; i++) {
+                var block = blocks[i]
+                if (block.alive) {
+                    game.drawImage(block)
+                }
+            }
         }
     }
 
