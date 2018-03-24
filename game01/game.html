@@ -17,6 +17,8 @@
 </head>
 <body>
 <canvas id="id-canvas" width="400" height="300"></canvas>
+<hr>
+<input id="id-input-speed" type="range" value="1">
 
 <script>
     var loadlevel = function (n) {
@@ -31,21 +33,27 @@
         return blocks
     }
 
+    var blocks = []
     var enableDebugMode = function (enable) {
         if (!enable) {
             return
         }
-
+        window.paused = false
         window.addEventListener('keydown', function (event) {
             var k = event.key
-            if (event.key == 'p') {
+            if (k == 'p') {
                 // 暂停功能
-                paused = !paused
+                window.paused = !window.paused
             } else if ('1234567'.includes(k)) {
                 // 为了debug临时加入的关卡功能
                 blocks = loadlevel(Number(k))
             }
 
+        })
+        // 控制速度
+        document.querySelector('#id-input-speed').addEventListener('input', function () {
+            var input = event.target
+            window.fps = Number(input.value)
         })
     }
     var __main = function () {
@@ -56,10 +64,7 @@
         var paddle = Paddle()
         var ball = Ball()
 
-        var blocks = loadlevel(1)
-
-
-        var paused = false
+        blocks = loadlevel(1)
 
         game.registerAction('a', function () {
             paddle.moveLeft()
