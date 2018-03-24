@@ -15,52 +15,98 @@
 <script>
     var log = console.log.bind(console)
 
-    var canvas = document.querySelector('#id-canvas')
-    var context = canvas.getContext('2d')
+    var imageFromPath= function (path) {
+        var img = new Image()
+        img.src = path
+        return img
+    }
+    var Paddle = function () {
+        var image = imageFromPath('paddle.png')
+        var o = {
+            image: image,
+            x: 100,
+            y: 200,
+            speed: 5,
+        }
+        var paddle = o
+        o.moveLeft = function () {
+            paddle.x -= paddle.speed
+        }
 
-    var x = 100
-    var y = 200
-    var speed = 5
-
-    var img = new Image()
-    img.src = 'paddle.png'
-    log(img)
-    img.onload = function () {
-        context.drawImage(img, x, y)
+        o.moveRight = function () {
+            paddle.x += paddle.speed
+        }
+        return o
     }
 
-    var leftDown = false
-    var rightDown = false
-    //events
-    window.addEventListener('keydown', function () {
-        var k = event.key
-        if (k == 'a') {
-            leftDown = true
-        } else if (k == 'd'){
-            rightDown = true
+    var GuaGame = function () {
+        var g = {
+            actions: {},
+            keydowns: {},
         }
-    })
-    window.addEventListener('keyup', function () {
-        var k = event.key
-        if (k == 'a') {
-            leftDown = false
-        } else if (k == 'd'){
-            rightDown = false
-        }
-    })
+        var canvas = document.querySelector('#id-canvas')
+        var context = canvas.getContext('2d')
+        g.canvas = canvas
+        g.context = context
 
-    setInterval(function () {
-        // update x and y
-        if (leftDown == true) {
-            x -= speed
-        } else if (rightDown == true) {
-            x += speed
+        g.drawImage = function (guaImage) {
+            g.context.drawImage(guaImage.image, guaImage.x, guaImage.y)
+        }
+        // event
+        window.addEventListener('keydown', function (event) {
+            g.keydowns[event.key] = true
+        })
+        window.addEventListener('keyup', function (event) {
+            g.keydowns[event.key] = false
+        })
+
+        //
+        g.registerAction = function (key, callback) {
+            g.actions[key] = callback
+        }
+        // timer
+        setInterval(function () {
+            // event
+            var actions = Object.keys(g.actions)
+            for (var i = 0; i < actions.length; i++) {
+                var key = actions[i]
+                if (g.keydowns[key]) {
+                    g.actions[key]()
+                }
+            }
+            // update
+            g.update()
+            // clear
+            context.clearRect(0, 0, canvas.width, canvas.height)
+            // draw
+            g.draw()
+        }, 1000/30)
+
+        return g
+    }
+    var __main = function () {
+        var game = GuaGame()
+
+        var paddle = Paddle()
+
+        game.registerAction('a', function () {
+            paddle.moveLeft()
+        })
+
+        game.registerAction('d', function () {
+            paddle.moveRight()
+        })
+        
+        game.update = function () {
+            
         }
 
-        // draw
-        context.clearRect(0, 0, canvas.width, canvas.height)
-        context.drawImage(img, x, y)
-    }, 1000/60)
+        game.draw = function () {
+            game.drawImage(paddle)
+        }
+    }
+
+    __main()
 </script>
 
 </body>
